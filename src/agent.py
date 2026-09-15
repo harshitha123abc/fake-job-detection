@@ -47,10 +47,8 @@ class JobExtractorAgent:
         }
 
     def _extract_with_ai(self, text: str) -> Optional[Dict]:
-        """Use OpenAI to extract job information for better accuracy"""
-        try:
-            if not os.getenv('OPENAI_API_KEY'):
-                return None
+    """Use OpenAI to extract job information for better accuracy"""
+    return None
 
             prompt = f"""Extract the following information from this job posting text. Be precise and return only valid information. If something is not mentioned or unclear, use "Not specified".
 
