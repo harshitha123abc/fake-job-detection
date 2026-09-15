@@ -797,14 +797,11 @@ class ScamDetectionAgent:
     """Agent 4: AI-powered scam detection using OpenAI"""
 
     def detect_scams(self, text: str) -> Dict:
-        """Use OpenAI to detect scam patterns"""
-        try:
-            # Check if API key is available
-            if not os.getenv('OPENAI_API_KEY'):
-                print("⚠️  OpenAI API key not found - using fallback detection")
-                return self._fallback_scam_detection(text)
+        """Use OpenAI scam detection when available; otherwise fallback to rule-based detection."""
+        if not openai_client or not os.getenv("OPENAI_API_KEY"):
+            return self._fallback_scam_detection(text)
 
-            prompt = f"""Analyze this specific job posting for scam indicators. Provide a unique analysis based on the actual content of this posting.
+        prompt = f"""Analyze this job posting for scam indicators.
 
 Focus on:
 1. Payment requirements (training fees, registration fees, etc.)
@@ -826,6 +823,7 @@ JSON format:
   "explanation": "brief explanation"
 }}"""
 
+        try:
             response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
@@ -834,23 +832,17 @@ JSON format:
             )
 
             result_text = response.choices[0].message.content
-
-            # Parse JSON response
             json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
             if json_match:
                 result = json.loads(json_match.group())
                 return result
-            else:
-                return self._fallback_scam_detection(text)
+            return self._fallback_scam_detection(text)
 
         except Exception as e:
             print(f"Scam detection error: {e}")
             error_msg = str(e)
-            
-            # Check if it's an API quota/billing error
             if "insufficient_quota" in error_msg.lower() or "429" in error_msg:
                 return self._api_quota_exceeded_detection(text)
-            
             return self._fallback_scam_detection(text)
 
     def _api_quota_exceeded_detection(self, text: str) -> Dict:
@@ -859,7 +851,6 @@ JSON format:
         detected_scams = []
         checked_signals = []
 
-        # ── Payment / fee demands ─────────────────────────────────────────────
         payment_triggers = [
             "training fee", "registration fee", "application fee", "joining fee",
             "pay to work", "send money", "wire transfer", "western union",
@@ -875,7 +866,6 @@ JSON format:
             detected_scams.extend([f"Payment demand: '{p}'" for p in found_payment])
         checked_signals.append(f"Payment / fee demands: {'🚨 ' + str(len(found_payment)) + ' found' if found_payment else '✅ None detected'}")
 
-        # ── Unrealistic income promises ───────────────────────────────────────
         income_triggers = [
             "guaranteed income", "earn ₹50,000", "earn ₹1,00,000", "earn 50000",
             "make money fast", "easy money", "get rich quick", "unlimited earning",
@@ -894,7 +884,6 @@ JSON format:
             detected_scams.extend([f"Unrealistic income promise: '{p}'" for p in set(found_income)])
         checked_signals.append(f"Unrealistic income promises: {'🚨 ' + str(len(set(found_income))) + ' found' if found_income else '✅ None detected'}")
 
-        # ── Urgency / pressure tactics ────────────────────────────────────────
         urgency_triggers = [
             "limited seats", "limited slots", "only few seats", "hurry",
             "last few positions", "closing soon", "apply immediately",
@@ -907,7 +896,6 @@ JSON format:
             detected_scams.extend([f"Urgency / pressure tactic: '{p}'" for p in found_urgency])
         checked_signals.append(f"Urgency / pressure tactics: {'⚠️ ' + str(len(found_urgency)) + ' found' if found_urgency else '✅ None detected'}")
 
-        # ── Vague / suspicious contact ────────────────────────────────────────
         contact_triggers = [
             "whatsapp only", "contact on whatsapp", "call on whatsapp",
             "no office address", "work from anywhere", "gmail.com recruiter",
@@ -922,7 +910,6 @@ JSON format:
             detected_scams.extend([f"Suspicious contact method: '{p}'" for p in found_contact])
         checked_signals.append(f"Suspicious contact / email: {'⚠️ ' + str(len(found_contact)) + ' found' if found_contact else '✅ None detected'}")
 
-        # ── Grammar / vagueness signals ───────────────────────────────────────
         vague_triggers = [
             "kindly revert", "do the needful", "revert back asap",
             "good communication skill", "basic computer knowledge",
@@ -932,7 +919,6 @@ JSON format:
         found_vague = [p for p in vague_triggers if p in text_lower]
         checked_signals.append(f"Vague / low-bar requirements: {'⚠️ ' + str(len(found_vague)) + ' found' if found_vague else '✅ None detected'}")
 
-        # ── Positive / legitimate signals ─────────────────────────────────────
         legit_signals = []
         if re.search(r'(pvt\.?\s*ltd|private limited|inc\.|corporation|llp)', text_lower):
             legit_signals.append("Registered company name format present")
@@ -954,8 +940,10 @@ JSON format:
             scam_score = max(scam_score - len(legit_signals) * 8, 0)
 
         risk_level = "Low"
-        if scam_score >= 70: risk_level = "High"
-        elif scam_score >= 35: risk_level = "Medium"
+        if scam_score >= 70:
+            risk_level = "High"
+        elif scam_score >= 35:
+            risk_level = "Medium"
 
         explanation_parts = [
             f"Rule-based analysis checked {len(checked_signals)} signal categories:",
@@ -991,13 +979,15 @@ JSON format:
         ]
 
         detected_scams = [indicator for indicator in scam_indicators if indicator in text_lower]
-
         scam_score = min(len(detected_scams) * 20, 100)
 
         risk_level = "Low"
-        if scam_score >= 80: risk_level = "Critical"
-        elif scam_score >= 60: risk_level = "High"
-        elif scam_score >= 40: risk_level = "Medium"
+        if scam_score >= 80:
+            risk_level = "Critical"
+        elif scam_score >= 60:
+            risk_level = "High"
+        elif scam_score >= 40:
+            risk_level = "Medium"
 
         return {
             "scam_score": scam_score,
