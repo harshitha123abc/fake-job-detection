@@ -13,4 +13,5 @@ requests
 plotly
 faiss-cpu
 sentence-transformers
-numpygunicorn
+numpy
+gunicorn
