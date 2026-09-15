@@ -47,51 +47,7 @@ class JobExtractorAgent:
         }
 
     def _extract_with_ai(self, text: str) -> Optional[Dict]:
-    """Use OpenAI to extract job information for better accuracy"""
-    return None
-
-            prompt = f"""Extract the following information from this job posting text. Be precise and return only valid information. If something is not mentioned or unclear, use "Not specified".
-
-Job Posting Text:
-{text}
-
-Guidelines:
-- company: Extract the actual company name. If not clearly stated, use "Not specified".
-- role: Extract the job title/role. If not clearly stated, use "Not specified".
-- salary: Extract specific salary/compensation information (e.g., "₹8-12 LPA", "$50,000/year"). If no specific numbers, use "Not specified".
-- location: Extract actual work location like city names, countries, or "Remote". Do not extract generic terms like "Venue", "Office", or "On-site".
-- extraction_confidence: A number from 0.0 to 1.0 indicating confidence in the extraction
-
-Return a JSON object with exactly these keys:
-- company
-- role
-- salary
-- location
-- extraction_confidence
-
-JSON Response:"""
-
-            response = openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-                temperature=0.1
-            )
-
-            result_text = response.choices[0].message.content.strip()
-
-            # Parse JSON response
-            json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
-            if json_match:
-                result = json.loads(json_match.group())
-                # Validate required keys
-                required_keys = ["company", "role", "salary", "location", "extraction_confidence"]
-                if all(key in result for key in required_keys):
-                    return result
-
-        except Exception as e:
-            print(f"AI extraction failed: {e}")
-
+        """Use OpenAI to extract job information for better accuracy"""
         return None
 
     def _is_email_format(self, text: str) -> bool:
@@ -579,7 +535,7 @@ class CrossPlatformSearchAgent:
     def _google_web_search(self, query: str) -> Dict:
         """Fallback search using DuckDuckGo (no API key required)."""
         try:
-            from ddgs import DDGS
+            from ddgs import DDGS  # type: ignore[import-not-found]
             results = list(DDGS().text(query, max_results=10))
             items = [{'link': r.get('href', ''), 'title': r.get('title', ''), 'snippet': r.get('body', '')}
                      for r in results if r.get('href')]
@@ -609,7 +565,7 @@ class CompanyVerificationAgent:
                 pass
         # DuckDuckGo fallback
         try:
-            from ddgs import DDGS
+            from ddgs import DDGS  # type: ignore[import-not-found]
             results = list(DDGS().text(query, max_results=5))
             items = [{'link': r.get('href',''), 'title': r.get('title',''), 'snippet': r.get('body','')}
                      for r in results if r.get('href')]
