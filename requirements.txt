@@ -1,0 +1,16 @@
+Flask
+flask-cors
+joblib
+scikit-learn
+streamlit
+python-dotenv
+openai
+anthropic
+langchain
+langgraph
+pandas
+requests
+plotly
+faiss-cpu
+sentence-transformers
+numpy

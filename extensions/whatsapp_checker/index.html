@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Job Message Checker</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1e3a8a;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-section {
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            min-height: 150px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #1e3a8a;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+        .safe { background-color: #d4edda; border: 1px solid #c3e6cb; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; }
+        .danger { background-color: #f8d7da; border: 1px solid #f5c6cb; }
+        .loading { background-color: #e2e3e5; border: 1px solid #d6d8db; }
+        .score-bar {
+            width: 100%;
+            height: 25px;
+            background-color: #e9ecef;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .score-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .safe-fill { background-color: #28a745; }
+        .warning-fill { background-color: #ffc107; }
+        .danger-fill { background-color: #dc3545; }
+        .details {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .instructions {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #1e3a8a;
+        }
+        .instructions h3 {
+            margin-top: 0;
+            color: #1e3a8a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 WhatsApp Job Message Checker</h1>
+
+        <div class="instructions">
+            <h3>How to use:</h3>
+            <ol>
+                <li>Copy the job message from WhatsApp</li>
+                <li>Paste it below</li>
+                <li>Click "Check Message" to analyze</li>
+            </ol>
+        </div>
+
+        <div class="input-section">
+            <textarea id="messageInput" placeholder="Paste your WhatsApp job message here..."></textarea>
+        </div>
+
+        <button id="checkBtn">🔍 Check Message</button>
+
+        <div id="result" class="result loading">
+            <h3 id="status">Analyzing...</h3>
+            <div class="score-bar">
+                <div id="scoreFill" class="score-fill"></div>
+            </div>
+            <div>Risk Score: <span id="score">0</span>%</div>
+            <div class="details">
+                <div id="reasoning"></div>
+                <div id="extractedInfo"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('checkBtn').addEventListener('click', async () => {
+            const messageInput = document.getElementById('messageInput');
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            const scoreFill = document.getElementById('scoreFill');
+            const scoreSpan = document.getElementById('score');
+            const reasoningDiv = document.getElementById('reasoning');
+            const extractedDiv = document.getElementById('extractedInfo');
+            const checkBtn = document.getElementById('checkBtn');
+
+            const message = messageInput.value.trim();
+            if (!message) {
+                alert('Please paste a message to check.');
+                return;
+            }
+
+            checkBtn.disabled = true;
+            checkBtn.textContent = 'Analyzing...';
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result loading';
+            statusDiv.textContent = 'Analyzing message...';
+
+            try {
+                const response = await fetch('http://localhost:5000/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': 'test123'
+                    },
+                    body: JSON.stringify({
+                        description: message
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const result = await response.json();
+                updateResults(result);
+
+            } catch (error) {
+                console.error('Error:', error);
+                resultDiv.className = 'result danger';
+                statusDiv.textContent = `Error: ${error.message}`;
+                scoreFill.style.width = '0%';
+                scoreSpan.textContent = '0';
+            } finally {
+                checkBtn.disabled = false;
+                checkBtn.textContent = '🔍 Check Message';
+            }
+        });
+
+        function updateResults(result) {
+            const resultDiv = document.getElementById('result');
+            const statusDiv = document.getElementById('status');
+            const scoreFill = document.getElementById('scoreFill');
+            const scoreSpan = document.getElementById('score');
+            const reasoningDiv = document.getElementById('reasoning');
+            const extractedDiv = document.getElementById('extractedInfo');
+
+            const riskScore = result.risk_score || 0;
+            const riskLevel = result.risk_level || 'Unknown';
+
+            scoreSpan.textContent = riskScore;
+            scoreFill.style.width = `${riskScore}%`;
+
+            if (riskLevel === 'Low') {
+                resultDiv.className = 'result safe';
+                scoreFill.className = 'score-fill safe-fill';
+                statusDiv.textContent = '✅ Low Risk - Appears Legitimate';
+            } else if (riskLevel === 'Medium') {
+                resultDiv.className = 'result warning';
+                scoreFill.className = 'score-fill warning-fill';
+                statusDiv.textContent = '⚠️ Medium Risk - Exercise Caution';
+            } else {
+                resultDiv.className = 'result danger';
+                scoreFill.className = 'score-fill danger-fill';
+                statusDiv.textContent = '🚨 High Risk - Potential Scam';
+            }
+
+            if (result.reasoning && result.reasoning.length > 0) {
+                reasoningDiv.innerHTML = `<strong>Analysis:</strong><br>${result.reasoning.join('<br>')}`;
+            }
+
+            if (result.extracted_info) {
+                const info = result.extracted_info;
+                extractedDiv.innerHTML = `
+                    <strong>Extracted Information:</strong><br>
+                    Company: ${info.company || 'Not found'}<br>
+                    Role: ${info.role || 'Not found'}<br>
+                    Location: ${info.location || 'Not found'}<br>
+                    Salary: ${info.salary || 'Not found'}
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

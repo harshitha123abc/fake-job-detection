@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fake Job Detector</title>
+    <style>
+        body {
+            width: 350px;
+            padding: 15px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .safe { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .danger { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background-color: #e2e3e5; color: #383d41; }
+        .score-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .score-fill {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .safe-fill { background-color: #28a745; }
+        .warning-fill { background-color: #ffc107; }
+        .danger-fill { background-color: #dc3545; }
+        button {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f766e 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px 0;
+        }
+        button:hover { opacity: 0.9; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .details { font-size: 12px; margin-top: 10px; }
+        .agent-result {
+            margin: 5px 0;
+            padding: 5px;
+            background: #f8f9fa;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h3>🔍 Fake Job Detector</h3>
+    </div>
+
+    <button id="checkBtn">Check This Job Posting</button>
+
+    <div id="result" style="display: none;">
+        <div id="status" class="status loading">Analyzing...</div>
+        <div class="score-bar">
+            <div id="scoreFill" class="score-fill"></div>
+        </div>
+        <div id="confidence">Risk Score: <span id="score">0</span>%</div>
+        <div class="details">
+            <div id="reasoning"></div>
+            <div id="agentBreakdown"></div>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
