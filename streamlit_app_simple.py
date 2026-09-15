@@ -9,7 +9,7 @@ import hashlib
 
 load_dotenv()
 API_KEY = os.getenv("API_KEY", "")
-API_URL = "http://127.0.0.1:5000/predict"
+API_URL = "https://fake-job-detection-api-2hbn.onrender.com/predict"
 USERS_FILE = "users.json"
 
 if 'authenticated' not in st.session_state:
